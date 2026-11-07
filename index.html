@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Smart Plant Watering</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f7f1;
+    color: #243b2b;
+}
+
+header {
+    background: #14532d;
+    color: white;
+    padding: 22px 6%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: #a3e635;
+}
+
+.online {
+    background: #dcfce7;
+    color: #166534;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 30px auto;
+}
+
+.welcome {
+    margin-bottom: 25px;
+}
+
+.welcome h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.welcome p {
+    color: #64748b;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 23px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    font-size: 17px;
+    margin-bottom: 17px;
+}
+
+.value {
+    font-size: 38px;
+    font-weight: bold;
+    color: #15803d;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.progress {
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+#moistureBar {
+    height: 100%;
+    width: 45%;
+    background: #16a34a;
+    border-radius: 20px;
+    transition: width 0.5s;
+}
+
+.status {
+    display: inline-block;
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status.off {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status.on {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+button {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+button:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+.on-btn {
+    background: #16a34a;
+    color: white;
+}
+
+.off-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.auto-btn {
+    background: #14532d;
+    color: white;
+}
+
+select, input {
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    margin-top: 8px;
+    width: 100%;
+    max-width: 230px;
+}
+
+.alert {
+    display: none;
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 5px solid #dc2626;
+    padding: 16px;
+    border-radius: 9px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.weather-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.weather-box {
+    background: #f0fdf4;
+    padding: 17px 10px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.weather-box h2 {
+    color: #15803d;
+    margin-bottom: 7px;
+}
+
+.weather-box p {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.weather-icon {
+    font-size: 27px;
+    margin-bottom: 8px;
+}
+
+.mode-info {
+    margin-top: 13px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+@media(max-width:650px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .weather-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .welcome h1 {
+        font-size: 23px;
+    }
+
+    .container {
+        width: 92%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo"> Green<span>Sense</span></div>
+    <div class="online" id="connectionStatus">
+          DEMO MODE
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="welcome">
+        <h1>Smart Plant Monitoring Dashboard</h1>
+        <p>Monitor your plants and manage watering intelligently.</p>
+    </div>
+
+    <!-- LOW MOISTURE WARNING -->
+    <div class="alert" id="lowAlert">
+          LOW MOISTURE WARNING!
+        Your plant needs water.
+    </div>
+
+    <div class="grid">
+
+        <!-- SOIL MOISTURE -->
+        <div class="card">
+            <h3>  Soil Moisture</h3>
+
+            <div class="value">
+                <span id="moistureValue">45</span>%
+            </div>
+
+            <p class="subtitle">Current soil moisture level</p>
+
+            <div class="progress">
+                <div id="moistureBar"></div>
+            </div>
+
+            <span class="status" id="moistureStatus">
+                Moderate
+            </span>
+        </div>
+
+        <!-- PUMP STATUS -->
+        <div class="card">
+            <h3>  Water Pump Status</h3>
+
+            <div class="value" id="pumpStatus">OFF</div>
+
+            <p class="subtitle">Current pump operating condition</p>
+
+            <br>
+
+            <span class="status off" id="pumpBadge">
+                PUMP STOPPED
+            </span>
+        </div>
+
+        <!-- MANUAL CONTROL -->
+        <div class="card">
+            <h3>  Manual Pump Control</h3>
+
+            <p class="subtitle">
+                Control the water pump manually.
+            </p>
+
+            <div class="buttons">
+                <button class="on-btn" onclick="controlPump(true)">
+                    ▶ PUMP ON
+                </button>
+
+                <button class="off-btn" onclick="controlPump(false)">
+                    ■ PUMP OFF
+                </button>
+            </div>
+
+            <p class="mode-info" id="controlMessage">
+                Select MANUAL mode to control the pump.
+            </p>
+        </div>
+
+        <!-- AUTOMATIC MODE -->
+        <div class="card">
+            <h3>  Watering Mode</h3>
+
+            <p class="subtitle">
+                Select how your watering system operates.
+            </p>
+
+            <select id="wateringMode" onchange="changeMode()">
+                <option value="auto">Automatic Mode</option>
+                <option value="manual">Manual Mode</option>
+            </select>
+
+            <p class="mode-info" id="modeMessage">
+                Automatic watering is enabled.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- MOISTURE SETTINGS -->
+    <div class="card">
+        <h3>⚙️ Moisture Settings</h3>
+
+        <p class="subtitle">
+            Set the moisture percentage at which automatic watering starts.
+        </p>
+
+        <label for="threshold">Low moisture threshold (%)</label>
+
+        <input
+            type="number"
+            id="threshold"
+            value="30"
+            min="1"
+            max="99"
+        >
+
+        <button class="auto-btn" onclick="updateThreshold()">
+            Save Threshold
+        </button>
+
+        <p class="mode-info" id="thresholdMessage">
+            Current threshold: 30%
+        </p>
+    </div>
+
+    <!-- MOISTURE HISTORY -->
+    <div class="card">
+        <h3>  Moisture History</h3>
+
+        <p class="subtitle">
+            Track soil moisture changes over time.
+        </p>
+
+        <canvas id="moistureChart"></canvas>
+    </div>
+
+    <!-- LAST WATERING -->
+    <div class="card">
+        <h3>  Last Watering Time</h3>
+
+        <div class="value" style="font-size:25px" id="lastWatering">
+            Not yet watered
+        </div>
+
+        <p class="subtitle">
+            Most recent completed watering event.
+        </p>
+    </div>
+
+    <!-- WEATHER -->
+    <div class="card">
+        <h3>  Weather Conditions</h3>
+
+        <p class="subtitle" id="weatherLocation">
+            Fetching local weather...
+        </p>
+
+        <br>
+
+        <div class="weather-grid">
+
+            <div class="weather-box">
+                <div class="weather-icon"> </div>
+                <h2 id="temperature">--°C</h2>
+                <p>Temperature</p>
+            </div>
+
+            <div class="weather-box">
+                <div class="weather-icon"> </div>
+                <h2 id="humidity">--%</h2>
+                <p>Air Humidity</p>
+            </div>
+
+            <div class="weather-box">
+                <div class="weather-icon"> </div>
+                <h2 id="rainChance">--%</h2>
+                <p>Rain Probability</p>
+            </div>
+
+            <div class="weather-box">
+                <div class="weather-icon" id="weatherIcon"> </div>
+                <h2 id="weatherCondition">Loading</h2>
+                <p>Weather</p>
+            </div>
+
+        </div>
+
+        <p class="mode-info" id="weatherUpdated">
+            Weather data is loading...
+        </p>
+
+        <button class="auto-btn" onclick="getWeather()">
+            Refresh Weather
+        </button>
+    </div>
+
+</div>
+
+<footer>
+     GreenSense Smart Plant Watering System
+    <br><br>
+    Intelligent Irrigation | Sustainable Gardening
+</footer>
+
+
+<script>
+
+// ====================================
+// 1. INITIAL SETTINGS
+// ====================================
+
+let moisture = 45;
+let pumpOn = false;
+let mode = "auto";
+let threshold = 30;
+let stopThreshold = 50;
+let wateringStart = null;
+let lastWatering = localStorage.getItem("lastWatering")
+    || "Not yet watered";
+
+let moistureLabels = [];
+let moistureValues = [];
+
+
+// ====================================
+// 2. MOISTURE HISTORY GRAPH
+// ====================================
+
+const ctx = document.getElementById("moistureChart");
+
+const moistureChart = new Chart(ctx, {
+    type: "line",
+
+    data: {
+        labels: moistureLabels,
+
+        datasets: [{
+            label: "Soil Moisture (%)",
+            data: moistureValues,
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22,163,74,0.12)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3
+        }]
+    },
+
+    options: {
+        responsive: true,
+
+        scales: {
+            y: {
+                min: 0,
+                max: 100,
+                title: {
+                    display: true,
+                    text: "Moisture Percentage"
+                }
+            }
+        }
+    }
+});
+
+
+// ====================================
+// 3. UPDATE MOISTURE DISPLAY
+// ====================================
+
+function updateMoistureDisplay() {
+
+    document.getElementById("moistureValue")
+        .innerText = moisture;
+
+    document.getElementById("moistureBar")
+        .style.width = moisture + "%";
+
+    const status = document.getElementById("moistureStatus");
+
+    if (moisture < threshold) {
+        status.innerText = "Dry";
+        status.style.background = "#fee2e2";
+        status.style.color = "#991b1b";
+    }
+    else if (moisture < 60) {
+        status.innerText = "Moderate";
+        status.style.background = "#fef3c7";
+        status.style.color = "#92400e";
+    }
+    else {
+        status.innerText = "Wet";
+        status.style.background = "#dcfce7";
+        status.style.color = "#166534";
+    }
+
+    document.getElementById("lowAlert").style.display =
+        moisture < threshold ? "block" : "none";
+}
+
+
+// ====================================
+// 4. UPDATE PUMP STATUS
+// ====================================
+
+function updatePumpDisplay() {
+
+    document.getElementById("pumpStatus").innerText =
+        pumpOn ? "ON" : "OFF";
+
+    const badge = document.getElementById("pumpBadge");
+
+    badge.innerText = pumpOn ? "PUMP RUNNING" : "PUMP STOPPED";
+
+    badge.className = pumpOn
+        ? "status on"
+        : "status off";
+}
+
+
+// ====================================
+// 5. MANUAL PUMP CONTROL
+// ====================================
+
+function controlPump(state) {
+
+    if (mode !== "manual") {
+        document.getElementById("controlMessage").innerText =
+            "Switch to Manual Mode before controlling the pump.";
+        return;
+    }
+
+    setPump(state);
+
+    document.getElementById("controlMessage").innerText =
+        state ? "Pump switched ON." : "Pump switched OFF.";
+}
+
+
+// ====================================
+// 6. PUMP CONTROL LOGIC
+// ====================================
+
+function setPump(state) {
+
+    if (pumpOn === state) return;
+
+    pumpOn = state;
+
+    if (state) {
+        wateringStart = Date.now();
+    }
+    else if (wateringStart !== null) {
+
+        const now = new Date();
+
+        lastWatering = now.toLocaleString();
+
+        localStorage.setItem("lastWatering", lastWatering);
+
+        document.getElementById("lastWatering")
+            .innerText = lastWatering;
+
+        wateringStart = null;
+    }
+
+    updatePumpDisplay();
+}
+
+
+// ====================================
+// 7. AUTOMATIC WATERING MODE
+// ====================================
+
+function automaticWatering() {
+
+    if (mode !== "auto") return;
+
+    if (moisture < threshold && !pumpOn) {
+        setPump(true);
+    }
+
+    if (moisture >= stopThreshold && pumpOn) {
+        setPump(false);
+    }
+}
+
+
+// ====================================
+// 8. CHANGE AUTO / MANUAL MODE
+// ====================================
+
+function changeMode() {
+
+    mode = document.getElementById("wateringMode").value;
+
+    if (mode === "auto") {
+
+        document.getElementById("modeMessage").innerText =
+            "Automatic watering is enabled.";
+
+        document.getElementById("controlMessage").innerText =
+            "Manual control is disabled in AUTO mode.";
+
+        automaticWatering();
+
+    } else {
+
+        // Stop the demo pump when switching to manual.
+        setPump(false);
+
+        document.getElementById("modeMessage").innerText =
+            "Manual mode enabled. Control the pump yourself.";
+
+        document.getElementById("controlMessage").innerText =
+            "You can now use the ON/OFF buttons.";
+    }
+}
+
+
+// ====================================
+// 9. UPDATE MOISTURE THRESHOLD
+// ====================================
+
+function updateThreshold() {
+
+    const value = Number(
+        document.getElementById("threshold").value
+    );
+
+    if (!Number.isFinite(value) || value < 1 || value > 99) {
+        alert("Enter a threshold between 1 and 99.");
+        return;
+    }
+
+    threshold = value;
+    stopThreshold = Math.min(threshold + 20, 100);
+
+    document.getElementById("thresholdMessage").innerText =
+        "Current threshold: " + threshold + "%";
+
+    updateMoistureDisplay();
+    automaticWatering();
+}
+
+
+// ====================================
+// 10. DEMO SENSOR SIMULATION
+// ====================================
+
+// Simulates a moisture sensor until ESP32 is connected.
+
+function simulateSensor() {
+
+    if (pumpOn) {
+        moisture = Math.min(100, moisture + 3);
+    }
+    else {
+        moisture = Math.max(5, moisture - 1);
+    }
+
+    moisture = Math.round(moisture);
+
+    updateMoistureDisplay();
+    automaticWatering();
+    addHistory();
+}
+
+
+// ====================================
+// 11. MOISTURE GRAPH HISTORY
+// ====================================
+
+function addHistory() {
+
+    const time = new Date().toLocaleTimeString();
+
+    moistureLabels.push(time);
+    moistureValues.push(moisture);
+
+    if (moistureLabels.length > 20) {
+        moistureLabels.shift();
+        moistureValues.shift();
+    }
+
+    moistureChart.update();
+}
+
+
+// ====================================
+// 12. RESTORE LAST WATERING
+// ====================================
+
+document.getElementById("lastWatering").innerText =
+    lastWatering;
+
+
+// ====================================
+// 13. WEATHER CONDITIONS
+// ====================================
+
+function weatherDescription(code) {
+
+    if (code === 0) return ["Clear Sky", "☀️"];
+    if ([1, 2, 3].includes(code)) return ["Cloudy", "⛅"];
+    if ([45, 48].includes(code)) return ["Foggy", "🌫️"];
+    if ([51, 53, 55, 56, 57].includes(code)) return ["Drizzle", "🌦️"];
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return ["Rainy", "🌧️"];
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return ["Snow", "❄️"];
+    if ([95, 96, 99].includes(code)) return ["Thunderstorm", "⛈️"];
+
+    return ["Unknown", "🌤️"];
+}
+
+
+async function getWeather() {
+
+    const locationText = document.getElementById("weatherLocation");
+
+    locationText.innerText = "Getting your location...";
+
+    function fetchWeather(lat, lon, locationName) {
+
+        const url =
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&timezone=auto`;
+
+        return fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error("Weather API error");
+                return response.json();
+            })
+            .then(data => {
+
+                const current = data.current;
+
+                document.getElementById("temperature").innerText =
+                    current.temperature_2m + "°C";
+
+                document.getElementById("humidity").innerText =
+                    current.relative_humidity_2m + "%";
+
+                document.getElementById("rainChance").innerText =
+                    (current.precipitation_probability ?? "--") + "%";
+
+                const [description, icon] =
+                    weatherDescription(current.weather_code);
+
+                document.getElementById("weatherCondition").innerText =
+                    description;
+
+                document.getElementById("weatherIcon").innerText =
+                    icon;
+
+                locationText.innerText =
+                    "Weather for " + locationName;
+
+                document.getElementById("weatherUpdated").innerText =
+                    "Last updated: " + new Date().toLocaleTimeString();
+            });
+    }
+
+    if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(
+
+            position => {
+                fetchWeather(
+                    position.coords.latitude,
+                    position.coords.longitude,
+                    "Your current location"
+                ).catch(() => {
+                    locationText.innerText =
+                        "Unable to load weather. Please retry.";
+                });
+            },
+
+            () => {
+               
+                fetchWeather(10.8046903, 76.7279829, "Kanjikode, Kerala")
+                    .catch(() => {
+                        locationText.innerText =
+                            "Weather unavailable. Please retry.";
+                    });
+            },
+
+            { timeout: 10000 }
+        );
+
+    } else {
+
+        fetchWeather(10.8046903, 76.7279829, "Kanjikode, Kerala"")
+            .catch(() => {
+                locationText.innerText = "Weather unavailable.";
+            });
+    }
+}
+
+
+updateMoistureDisplay();
+updatePumpDisplay();
+addHistory();
+
+getWeather();
+
+// Refresh demo readings every 5 seconds.
+setInterval(simulateSensor, 5000);
+
+// Refresh weather every 15 minutes.
+setInterval(getWeather, 15 * 60 * 1000);
+
+</script>
+
+</body>
+</html>
